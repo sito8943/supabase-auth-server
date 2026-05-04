@@ -76,6 +76,22 @@ Body:
 }
 ```
 
+### `POST /verify`
+Verifica `token_hash` de callback (equivalente a `verifyOtp`).
+
+Body:
+
+```json
+{
+  "tokenHash": "<supabase-token-hash>",
+  "type": "email"
+}
+```
+
+Notas:
+- `type` soportado: `email` (confirmación) y `recovery` (reset password).
+- En éxito devuelve `verified: true` y, cuando aplica, `user`/`session`.
+
 ### `POST /refresh`
 Renueva sesión con refresh token.
 
@@ -95,6 +111,7 @@ Body:
 ```json
 {
   "accessToken": "<access_token>",
+  "refreshToken": "<refresh_token opcional, recomendado en recovery>",
   "password": "newStrongPassword123"
 }
 ```

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type EmailOtpType } from "@supabase/supabase-js";
 import { AppError } from "../errors/app-error";
 import { supabasePublicClient } from "../lib/supabase";
 import { env } from "../config/env";
@@ -15,6 +15,7 @@ import {
 import { throwIfSupabaseError } from "../utils/supabase-error";
 
 export const authRouter = Router();
+const verifyOtpTypes = new Set<EmailOtpType>(["email", "recovery"]);
 
 authRouter.post(
   "/register",
@@ -108,6 +109,7 @@ authRouter.post(
   "/update-password",
   asyncHandler(async (req, res) => {
     const accessToken = requireString(req.body?.accessToken, "accessToken");
+    const refreshToken = optionalString(req.body?.refreshToken);
     const password = requirePassword(req.body?.password);
 
     const tokenClient = createClient(env.supabaseUrl, env.supabaseAnonKey, {
@@ -115,12 +117,25 @@ authRouter.post(
         autoRefreshToken: false,
         persistSession: false
       },
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
+      ...(!refreshToken
+        ? {
+            global: {
+              headers: {
+                Authorization: `Bearer ${accessToken}`
+              }
+            }
+          }
+        : {})
     });
+
+    if (refreshToken) {
+      const { error: sessionError } = await tokenClient.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+
+      throwIfSupabaseError(sessionError);
+    }
 
     const { data: authData, error } = await tokenClient.auth.updateUser({
       password
@@ -180,3 +195,46 @@ authRouter.post(
     res.status(200).json({ sent: true });
   })
 );
+
+authRouter.post(
+  "/verify",
+  asyncHandler(async (req, res) => {
+    const tokenHash = requireString(req.body?.tokenHash ?? req.body?.token_hash, "tokenHash");
+    const type = requireString(req.body?.type, "type").toLowerCase() as EmailOtpType;
+
+    if (!verifyOtpTypes.has(type)) {
+      throw new AppError(400, "Field 'type' must be one of: email, recovery.");
+    }
+
+    const { data: authData, error } = await supabasePublicClient.auth.verifyOtp({
+      token_hash: tokenHash,
+      type
+    });
+
+    if (isAlreadyConfirmedError(error)) {
+      res.status(200).json({ verified: true, alreadyConfirmed: true });
+      return;
+    }
+
+    throwIfSupabaseError(error);
+    res.status(200).json({
+      verified: true,
+      user: authData.user,
+      session: authData.session
+    });
+  })
+);
+
+function isAlreadyConfirmedError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) {
+    return false;
+  }
+
+  const code = typeof error.code === "string" ? error.code.toLowerCase() : "";
+  if (code.includes("already_confirmed")) {
+    return true;
+  }
+
+  const message = typeof error.message === "string" ? error.message.toLowerCase() : "";
+  return message.includes("already confirmed");
+}

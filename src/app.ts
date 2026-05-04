@@ -8,6 +8,8 @@ import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { authRouter } from "./routes/auth.routes";
 
 export const app = express();
+const httpLogFormat =
+  ':date[iso] ":method :url" :status :response-time ms - :res[content-length]B ip=:remote-addr ua=":user-agent"';
 
 app.use(helmet());
 app.use(
@@ -28,7 +30,11 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
-app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
+app.use(
+  morgan(httpLogFormat, {
+    skip: (req) => req.path === "/health"
+  })
+);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
