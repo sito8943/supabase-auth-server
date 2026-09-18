@@ -112,7 +112,7 @@ authRouter.post(
     const refreshToken = optionalString(req.body?.refreshToken);
     const password = requirePassword(req.body?.password);
 
-    const tokenClient = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+    const tokenClient = createClient(env.supabaseUrl, env.supabasePublishableKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false

@@ -10,6 +10,29 @@ function requiredValue(key: string): string {
   return value;
 }
 
+/**
+ * Reads the first key that has a value. Supabase replaced the anon/service_role
+ * JWTs with publishable/secret keys, so both names are accepted while projects
+ * migrate.
+ */
+function optionalValueFrom(keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function requiredValueFrom(keys: string[]): string {
+  const value = optionalValueFrom(keys);
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${keys.join(" or ")}`);
+  }
+  return value;
+}
+
 function normalizePort(rawPort: string | undefined): number {
   if (!rawPort) {
     return 3090;
@@ -37,6 +60,6 @@ export const env = {
   corsOrigins: parseCsv(process.env.CORS_ORIGIN, "http://localhost:8080"),
   bridgeKey: requiredValue("SUPABASE_BRIDGE_KEY"),
   supabaseUrl: requiredValue("SUPABASE_URL"),
-  supabaseAnonKey: requiredValue("SUPABASE_ANON_KEY"),
-  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+  supabasePublishableKey: requiredValueFrom(["SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY"]),
+  supabaseSecretKey: optionalValueFrom(["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"])
 };

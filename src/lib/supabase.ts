@@ -8,8 +8,8 @@ const authOptions = {
   }
 };
 
-export const supabasePublicClient = createClient(env.supabaseUrl, env.supabaseAnonKey, authOptions);
+export const supabasePublicClient = createClient(env.supabaseUrl, env.supabasePublishableKey, authOptions);
 
-export const supabaseAdminClient = env.supabaseServiceRoleKey
-  ? createClient(env.supabaseUrl, env.supabaseServiceRoleKey, authOptions)
+export const supabaseAdminClient = env.supabaseSecretKey
+  ? createClient(env.supabaseUrl, env.supabaseSecretKey, authOptions)
   : null;

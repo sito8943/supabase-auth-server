@@ -7,8 +7,8 @@ Microservicio pequeño para exponer operaciones básicas de autenticación usand
 Copiar `.env.example` a `.env` y completar:
 
 - `SUPABASE_URL` (obligatoria)
-- `SUPABASE_ANON_KEY` (obligatoria)
-- `SUPABASE_SERVICE_ROLE_KEY` (opcional por ahora)
+- `SUPABASE_PUBLISHABLE_KEY` (obligatoria; se acepta `SUPABASE_ANON_KEY` como respaldo)
+- `SUPABASE_SECRET_KEY` (opcional; se acepta `SUPABASE_SERVICE_ROLE_KEY` como respaldo)
 - `SUPABASE_BRIDGE_KEY` (obligatoria, secreto compartido con backend Java)
 - `PORT` (opcional, default `3090`)
 - `CORS_ORIGIN` (opcional; lista separada por comas, default `http://localhost:8080`)
@@ -132,8 +132,8 @@ Authorization: Bearer <access_token>
 ## 4. Qué datos necesito de tu Supabase para dejarlo conectado
 
 1. `SUPABASE_URL` del proyecto
-2. `SUPABASE_ANON_KEY`
+2. `SUPABASE_PUBLISHABLE_KEY`
 3. URL(s) de frontend para:
    - `CORS_ORIGIN`
    - redirect de recuperación/verificación (`redirectTo`)
-4. Confirmar si también quieres endpoints admin (entonces necesitaré `SUPABASE_SERVICE_ROLE_KEY`)
+4. Confirmar si también quieres endpoints admin (entonces necesitaré `SUPABASE_SECRET_KEY`)
